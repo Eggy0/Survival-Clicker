@@ -1,4 +1,6 @@
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
@@ -12,30 +14,55 @@ public class GameManager : MonoBehaviour
     [SerializeField] private int tools;
     [SerializeField] private int food;
     [SerializeField] private int gold;
-    [SerializeField] private int daysElapsed;
+    [SerializeField] private uint daysElapsed;
 
     [Header("Civilization settings")]
-    [SerializeField] private int houses; //4 people per 1 house
-    [SerializeField] private int farms; //2 per
-    [SerializeField] private int ironMines; //3 per
-    [SerializeField] private int goldMines; //3 per
-    [SerializeField] private int quarries; //3 per
-    [SerializeField] private int woodcutterHuts; //1 per
-    [SerializeField] private int smithingShop; //1 per
+    [SerializeField] private uint houses; //4 people per 1 house
+    [SerializeField] private uint farms; //2 per
+    [SerializeField] private uint ironMines; //3 per
+    [SerializeField] private uint goldMines; //3 per
+    [SerializeField] private uint quarries; //3 per
+    [SerializeField] private uint woodcutterHuts; //1 per
+    [SerializeField] private uint smithy; //1 per
 
+    [Header("Workers")]
+    [SerializeField] private uint farmers; //2 per
+    [SerializeField] private uint ironMiners; //3 per
+    [SerializeField] private uint goldMiners; //3 per
+    [SerializeField] private uint quarryWorkers; //3 per
+    [SerializeField] private uint woodcutters; // 1 per
+    [SerializeField] private uint blacksmiths; // 1 per
+    [SerializeField] private uint unemployed; // 1 per
 
-    [SerializeField] private int farmers; //2 per
-    [SerializeField] private int ironMiners; //3 per
-    [SerializeField] private int goldMiners; //3 per
-    [SerializeField] private int quarryWorkers; //3 per
-    [SerializeField] private int woodcutters; // 1 per
-    [SerializeField] private int blacksmiths; // 1 per
-    [SerializeField] private int unemployed; // 1 per
+    [Header("Buttons")]
+    [SerializeField] Button houseButton;
+    [SerializeField] Button farmButton;
+    [SerializeField] Button ironMineButton;
+    [SerializeField] Button goldMineButton;
+    [SerializeField] Button quarryButton;
+    [SerializeField] Button woodcutterButton;
+    [SerializeField] Button smithyButton;
 
+    [Header("Text settings - Buildings")]
+    [SerializeField] TMP_Text houseText;
+    [SerializeField] TMP_Text farmText;
+    [SerializeField] TMP_Text ironMineText;
+    [SerializeField] TMP_Text goldMineText;
+    [SerializeField] TMP_Text quarryText;
+    [SerializeField] TMP_Text woodcutterText;
+    [SerializeField] TMP_Text smithyText;
+
+    [Header("Text settings - Statistics")]
+    [SerializeField] TMP_Text populationText;
+    [SerializeField] TMP_Text woodText;
+    [SerializeField] TMP_Text stoneText;
+    [SerializeField] TMP_Text ironText;
+    [SerializeField] TMP_Text goldText;
+    [SerializeField] TMP_Text foodText;
+    [SerializeField] TMP_Text daysText;
 
     private float timer;
     private float populationTimer;
-    [SerializeField] private int totalPopulation;
 
     public void ReturnToMenu()
     {
@@ -47,29 +74,57 @@ public class GameManager : MonoBehaviour
         timer += Time.deltaTime;
         populationTimer += Time.deltaTime;
 
-        if (timer >= 60)
+        if (timer >= 10)
         {
             daysElapsed++;
             timer = 0;
-            if (daysElapsed % 3 == 0 && daysElapsed > 0 /* because zero divided by a number equals zero*/)
-            {
-                RemovePerson();
-            }
+            RemovePerson();
+            //Production of resources
             ProduceFood(5);
+            ProduceWood(3);
+            ProduceStone(3);
+            ProduceIron(3);
+            ProduceGold(2);
+
+            //Consume food
             ConsumeFood(1);
             Debug.Log("A day has elapsed");
+            if (food <= 0)
+            {
+                Debug.Log("Everyone has starved. Oops.");
+            }
         }
 
-        if (populationTimer >= 20)
+        if (populationTimer >= 3)
         {
             RollPerson(6,4);
             populationTimer = 0;
         }
     }
 
-    private int GetTotalPopulation()
+    private void UpdateText()
     {
-        int totalPopulation = 
+        populationText.text = $"Population: {GetTotalPopulation()} / {GetMaxPopulation()}\n    Workers: {GetTotalPopulation()-unemployed}\n    Unemployed: {unemployed}";
+        woodText.text = $"Wood: {wood}";
+        foodText.text = $"Food: {food}";
+        stoneText.text = $"Stone: {stone}";
+        ironText.text = $"Iron: {iron}";
+        goldText.text = $"Gold: {gold}";
+        daysText.text = $"Days elapsed: {daysElapsed}";
+
+        houseText.text = $"Houses: {houses}";
+        farmText.text = $"Farms: {farms}";
+        ironMineText.text = $"Iron Mines: {ironMines}";
+        goldMineText.text = $"Gold Mines: {goldMines}";
+        quarryText.text = $"Quarries: {quarries}";
+        woodcutterText.text = $"Woodcut. Huts: {woodcutterHuts}";
+        smithyText.text = $"Smithies: {smithy}";
+
+    }
+
+    private uint GetTotalPopulation()
+    {
+        uint totalPopulation = 
             farmers +
             ironMiners +
             goldMiners +
@@ -79,6 +134,50 @@ public class GameManager : MonoBehaviour
             unemployed;
         return totalPopulation;
 }
+    private uint GetMaxPopulation()
+    {
+        uint maxPopulation = houses * 4;
+        return maxPopulation;
+    }
+    /// <summary>
+    /// Remove a person
+    /// </summary>
+    private void RemovePerson()
+    {
+        if (GetTotalPopulation() > GetMaxPopulation())
+        {
+            Debug.Log("Too many people");
+            unemployed--;
+        }
+    }
+
+    /// <summary>
+    /// Roll for a random person
+    /// </summary>
+    /// <param name="max">Maximum number to roll</param>
+    /// <param name="threshold">The threshold that the randomly generated number must meet to make the roll successful</param>
+    private void RollPerson(int max, int threshold)
+    {
+        Debug.Log($"Current population {GetTotalPopulation()}; max population {GetMaxPopulation()}");
+        if (GetTotalPopulation() < GetMaxPopulation())
+        {
+            Debug.Log($"Rolling");
+            int rand = Random.Range(0,max+1);
+            if (rand >= threshold)
+            {
+                Debug.Log("Rolled for a new person");
+                unemployed++;
+            }
+            else
+            {
+                Debug.Log("Roll failed");
+            }
+        }
+        else
+        {
+            Debug.Log("Maximum capacity");
+        }
+    }
 
     /// <summary>
     /// Population food consumption
@@ -87,12 +186,12 @@ public class GameManager : MonoBehaviour
     /// 
     private void ConsumeFood(int foodConsumed)
     {
-        food -= foodConsumed * totalPopulation;
+        food -= foodConsumed * (int)GetTotalPopulation();
     }
 
     private void ProduceFood (int foodProduced)
     {
-        food += foodProduced * farmers;
+        food += foodProduced * (int)farmers;
         food += Mathf.RoundToInt((foodProduced * unemployed)/2);
     }
 
@@ -136,22 +235,22 @@ public class GameManager : MonoBehaviour
 
     private void ProduceWood(int woodProduced)
     {
-        wood += woodProduced * woodcutters;
+        wood += woodProduced * (int)woodcutters;
     }
     private void ProduceStone(int stoneProduced)
     {
-        stone += stoneProduced * quarryWorkers;
+        stone += stoneProduced * (int)quarryWorkers;
     }
     private void ProduceIron(int ironProduced)
     {
-        iron += ironProduced * ironMiners;
+        iron += ironProduced * (int)ironMiners;
     }
     private void ProduceGold(int goldProduced)
     {
-        gold += goldProduced * goldMiners;
+        gold += goldProduced * (int)goldMiners;
     }
 
-    private void BuildFarm()
+    public void BuildFarm()
     {
         if (BuildCost(10, 0, 0, 5))
         {
@@ -161,7 +260,7 @@ public class GameManager : MonoBehaviour
         }
 
     }
-    private void BuildIronMine()
+    public void BuildIronMine()
     {
         if (BuildCost(35, 20, 0, 30))
         {
@@ -170,7 +269,7 @@ public class GameManager : MonoBehaviour
             unemployed -= 3;
         }
     }
-    private void BuildGoldMine()
+    public void BuildGoldMine()
     {
         if (BuildCost(50, 35, 15, 30))
         {
@@ -179,7 +278,7 @@ public class GameManager : MonoBehaviour
             unemployed -= 3;
         }
     }
-    private void BuildQuarry()
+    public void BuildQuarry()
     {
         if (BuildCost(25, 0, 0, 30))
         {
@@ -188,65 +287,29 @@ public class GameManager : MonoBehaviour
             unemployed -= 3;
         }
     }
-    private void BuildWoodcutterHut()
+    public void BuildWoodcutterHut()
     {
         if (BuildCost(15, 0, 1, 10))
         {
             woodcutterHuts++;
-            woodcutters++;
-            unemployed--;
+            woodcutters += 2;
+            unemployed -= 2;
         }
     }
-    private void BuildSmithingShop()
+    public void BuildSmithy()
     {
         if (BuildCost(50, 30, 25, 30))
         {
-            smithingShop++;
+            smithy++;
             blacksmiths++;
             unemployed--;
         }
     }
-    private int GetMaxPopulation()
+    public void BuildHouse()
     {
-        int maxPopulation = houses * 4;
-        Debug.Log($"Max population {maxPopulation}");
-        return maxPopulation;
-    }
-    /// <summary>
-    /// Remove a person
-    /// </summary>
-    private void RemovePerson()
-    {
-        if (totalPopulation > GetMaxPopulation())
+        if (BuildCost(5, 0, 0, 5))
         {
-            Debug.Log("Too many people");
-            unemployed--;
-        }
-    }
-
-    /// <summary>
-    /// Roll for a random person
-    /// </summary>
-    /// <param name="max">Maximum number to roll</param>
-    /// <param name="threshold">The threshold that the randomly generated number must meet to make the roll successful</param>
-    private void RollPerson(int max, int threshold)
-    {
-        if (totalPopulation <= GetMaxPopulation())
-        {
-            int rand = Random.Range(0,max+1);
-            if (rand >= threshold)
-            {
-                Debug.Log("Rolled for a new person");
-                unemployed++;
-            }
-            else
-            {
-                Debug.Log("Roll failed");
-            }
-        }
-        else
-        {
-            Debug.Log("Maximum capacity");
+            houses++;
         }
     }
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -269,6 +332,7 @@ public class GameManager : MonoBehaviour
             BuildFarm();
         }
         UpdateTime();
-        totalPopulation = GetTotalPopulation();
+        UpdateText();
+        //totalPopulation = GetTotalPopulation();
     }
 }
