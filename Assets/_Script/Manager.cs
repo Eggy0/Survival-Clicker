@@ -10,7 +10,6 @@ public class Manager : MonoBehaviour
     public TMP_Text volumeText;
     public float globalVolume = 0.5f;
     public AudioSource audioSource;
-    public static AudioSource audioSourceInstance;
 
     public static Manager instance;
     public void SwitchScene(string sceneName)
@@ -46,19 +45,19 @@ public class Manager : MonoBehaviour
 
     private void Awake()
     {
-        
-        if (instance == null)
+        Manager duplicate = (Manager)FindFirstObjectByType(typeof(Manager));
+        if (duplicate != null && instance != null)
+        {
+            Debug.Log($"Found dupe: {duplicate} (original: {instance}");
+            instance = duplicate;
+            Destroy(duplicate);
+        }
+        else if (instance == null)
         {
             instance = this;
         }
 
-        if (audioSourceInstance == null)
-        {
-            audioSourceInstance = audioSource;
-        }
-
         DontDestroyOnLoad(this);
-        DontDestroyOnLoad(audioSourceInstance);
         volumeSlider.value = globalVolume;
         ApplyVolume();
     }
