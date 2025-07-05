@@ -6,37 +6,17 @@ using UnityEngine.UI;
 
 public class Manager : MonoBehaviour
 {
-    public Slider volumeSlider;
-    public TMP_Text volumeText;
-    public float globalVolume = 0.5f;
-    public AudioSource audioSource;
 
     public static Manager instance;
     public void SwitchScene(string sceneName)
     {
         SceneManager.LoadScene(sceneName);
     }
-
-    public void ChangeVolume()
+    public void TogglePanel(GameObject panel)
     {
-        globalVolume = volumeSlider.value;
-        ApplyVolume();
-    }
-
-    public void ApplyVolume()
-    {
-        volumeText.text = $"Volume: {Mathf.Floor(globalVolume*100)}%";
-        audioSource.volume = globalVolume;
-    }
-
-    public void ActivePanel(GameObject panel)
-    {
-        panel.SetActive(true);
+        panel.SetActive(!panel.activeSelf);
     } 
-    public void DisablePanel(GameObject panel)
-    {
-        panel.SetActive(false);
-    }
+
 
     public void ExitApp()
     {
@@ -45,20 +25,16 @@ public class Manager : MonoBehaviour
 
     private void Awake()
     {
-        Manager duplicate = (Manager)FindFirstObjectByType(typeof(Manager));
-        if (duplicate != null && instance != null)
+        if (instance)
         {
-            Debug.Log($"Found dupe: {duplicate} (original: {instance}");
-            instance = duplicate;
-            Destroy(duplicate);
+            Destroy(gameObject);
         }
-        else if (instance == null)
+        else
         {
             instance = this;
+            DontDestroyOnLoad(gameObject);
         }
 
-        DontDestroyOnLoad(this);
-        volumeSlider.value = globalVolume;
-        ApplyVolume();
+        SwitchScene("MainMenu");
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -5,15 +6,18 @@ using UnityEngine.UI;
 public class GameManager : MonoBehaviour
 {
     public GameObject pausePanel;
-    public Manager manager => Manager.instance;
+    public GameObject win;
+    public GameObject gameOver;
+    public static GameManager instance;
+    public static Manager manager => Manager.instance;
 
     [Header("Resources")]
-    [SerializeField] private int wood;
-    [SerializeField] private int stone;
-    [SerializeField] private int iron;
-    [SerializeField] private int tools;
-    [SerializeField] private int food;
-    [SerializeField] private int gold;
+    [SerializeField] private uint wood;
+    [SerializeField] private uint stone;
+    [SerializeField] private uint iron;
+    [SerializeField] private uint tools;
+    [SerializeField] private uint food;
+    [SerializeField] private uint gold;
     [SerializeField] private uint daysElapsed;
 
     [Header("Civilization settings")]
@@ -59,10 +63,29 @@ public class GameManager : MonoBehaviour
     [SerializeField] TMP_Text ironText;
     [SerializeField] TMP_Text goldText;
     [SerializeField] TMP_Text foodText;
+    [SerializeField] TMP_Text toolsText;
     [SerializeField] TMP_Text daysText;
 
-    private float timer;
-    private float populationTimer;
+     private TMP_Text _houses;
+     private TMP_Text _farms;
+     private TMP_Text _ironMines;
+     private TMP_Text _goldMines;
+     private TMP_Text _quarries;
+     private TMP_Text _woodcutterHuts;
+     private TMP_Text _smithy;
+
+     private TMP_Text _farmers;
+     private TMP_Text _ironMiners;
+     private TMP_Text _goldMiners;
+     private TMP_Text _quarryWorkers;
+     private TMP_Text _woodcutters;
+     private TMP_Text _blacksmiths; 
+     private TMP_Text _unemployed; 
+     private TMP_Text _total; 
+
+    private float timer; //General timer
+    private float populationTimer; //Timer for rolling new people
+    private bool otherStates; //Prevent the pause menu if a different panel is active
 
     public void ReturnToMenu()
     {
@@ -78,20 +101,20 @@ public class GameManager : MonoBehaviour
         {
             daysElapsed++;
             timer = 0;
-            RemovePerson();
             //Production of resources
-            ProduceFood(5);
-            ProduceWood(3);
+            ProduceFood(3);
+            ProduceWood(5);
             ProduceStone(3);
             ProduceIron(3);
             ProduceGold(2);
+            ProduceTools(1);
 
             //Consume food
-            ConsumeFood(1);
+            ConsumeFood(2);
             Debug.Log("A day has elapsed");
-            if (food <= 0)
+            if (daysElapsed >= 30)
             {
-                Debug.Log("Everyone has starved. Oops.");
+                Win();
             }
         }
 
@@ -110,6 +133,7 @@ public class GameManager : MonoBehaviour
         stoneText.text = $"Stone: {stone}";
         ironText.text = $"Iron: {iron}";
         goldText.text = $"Gold: {gold}";
+        toolsText.text = $"Tools: {tools}";
         daysText.text = $"Days elapsed: {daysElapsed}";
 
         houseText.text = $"Houses: {houses}";
@@ -120,6 +144,53 @@ public class GameManager : MonoBehaviour
         woodcutterText.text = $"Woodcut. Huts: {woodcutterHuts}";
         smithyText.text = $"Smithies: {smithy}";
 
+    }
+
+    private void Win()
+    {
+        otherStates = true;
+
+        manager.TogglePanel(win);
+
+        _houses = GameObject.Find("House").GetComponent<TMP_Text>();
+        _farms = GameObject.Find("WoodcutterHuts").GetComponent<TMP_Text>();
+        _ironMines = GameObject.Find("Quarries").GetComponent<TMP_Text>();
+        _goldMines = GameObject.Find("IMine").GetComponent<TMP_Text>();
+        _quarries = GameObject.Find("GMine").GetComponent<TMP_Text>();
+        _woodcutterHuts = GameObject.Find("Smithy").GetComponent<TMP_Text>();
+        _smithy = GameObject.Find("Farms").GetComponent<TMP_Text>();
+
+        _farmers = GameObject.Find("Farmers").GetComponent<TMP_Text>();
+        _ironMiners = GameObject.Find("IMiner").GetComponent<TMP_Text>();
+        _goldMiners = GameObject.Find("GMiner").GetComponent<TMP_Text>();
+        _quarryWorkers = GameObject.Find("QuarryWorkers").GetComponent<TMP_Text>();
+        _woodcutters = GameObject.Find("Woodcutters").GetComponent<TMP_Text>();
+        _blacksmiths = GameObject.Find("Blacksmiths").GetComponent<TMP_Text>();
+        _unemployed = GameObject.Find("Unemployed").GetComponent<TMP_Text>();
+        _total = GameObject.Find("Total").GetComponent<TMP_Text>();
+
+
+        _houses.text = houses.ToString();
+        _farms.text = farms.ToString();
+        _ironMines.text = ironMines.ToString();
+        _goldMines.text = goldMines.ToString();
+        _quarries.text = quarries.ToString();
+        _woodcutterHuts.text = woodcutterHuts.ToString();
+        _smithy.text = smithy.ToString();
+
+        _farmers.text = farmers.ToString();
+        _ironMiners.text = ironMiners.ToString();
+        _goldMiners.text = goldMiners.ToString();
+        _quarryWorkers.text = quarryWorkers.ToString();
+        _woodcutters.text = woodcutters.ToString();
+        _blacksmiths.text = blacksmiths.ToString();
+        _unemployed.text = unemployed.ToString();
+        _total.text = GetTotalPopulation().ToString();
+    }
+    private void Lose()
+    {
+        otherStates = true;
+        manager.TogglePanel(gameOver);
     }
 
     private uint GetTotalPopulation()
@@ -142,14 +213,6 @@ public class GameManager : MonoBehaviour
     /// <summary>
     /// Remove a person
     /// </summary>
-    private void RemovePerson()
-    {
-        if (GetTotalPopulation() > GetMaxPopulation())
-        {
-            Debug.Log("Too many people");
-            unemployed--;
-        }
-    }
 
     /// <summary>
     /// Roll for a random person
@@ -162,7 +225,7 @@ public class GameManager : MonoBehaviour
         if (GetTotalPopulation() < GetMaxPopulation())
         {
             Debug.Log($"Rolling");
-            int rand = Random.Range(0,max+1);
+            int rand = UnityEngine.Random.Range(0,max+1);
             if (rand >= threshold)
             {
                 Debug.Log("Rolled for a new person");
@@ -184,27 +247,42 @@ public class GameManager : MonoBehaviour
     /// </summary>
     /// <param name="foodConsumed">Amount of food consumed by a single person</param>
     /// 
-    private void ConsumeFood(int foodConsumed)
+    private void ConsumeFood(uint foodConsumed)
     {
-        food -= foodConsumed * (int)GetTotalPopulation();
+        int remainingFood = (int)food; //To prevent underflowing, use a signed integer for the calculation
+        remainingFood -= (int)foodConsumed * (int)GetTotalPopulation();
+
+        if (remainingFood < 0) //Check if remaining food would go into the negatives
+        {
+            food = 0; //Set this to 0 because we don't want it to underflow
+            Lose();
+        }
+        else
+        {
+            food = (uint)remainingFood; //Set to this if the check has passed
+        }
     }
 
-    private void ProduceFood (int foodProduced)
+    private void ProduceFood (uint foodProduced)
     {
-        food += foodProduced * (int)farmers;
-        food += Mathf.RoundToInt((foodProduced * unemployed)/2);
+        food += foodProduced * (uint)Mathf.RoundToInt(farmers * 1.5f);
+        food += (uint)Mathf.RoundToInt((foodProduced * unemployed)/2);
     }
 
-    //TODO: Make "BuildCost" a class
-    private bool BuildCost(int woodCost, int stoneCost, int ironCost, int foodCost)
+    //TODO: Make "BuildItem" a class
+    private bool BuildItem(uint woodCost, uint stoneCost, uint ironCost, uint foodCost, uint assignWorkers, ref uint workerType, ref uint buildingType)
     {
-        bool canBuild = wood >= woodCost && stone >= stoneCost && iron >= ironCost && food >= foodCost;
+        bool canBuild = wood >= woodCost && stone >= stoneCost && iron >= ironCost && food >= foodCost && unemployed >= assignWorkers;
         if (canBuild)
         {
             wood -= woodCost;
             stone -= stoneCost;
             iron -= ironCost;
             food -= foodCost;
+            unemployed -= assignWorkers;
+            workerType += assignWorkers;
+            buildingType++;
+
             Debug.Log("Building successful");
         }
         else
@@ -213,15 +291,57 @@ public class GameManager : MonoBehaviour
 
             if (wood < woodCost)
             {
-                missingResources += $"{Mathf.Abs(woodCost - wood)} wood; ";
+                missingResources += $"{Mathf.Abs(woodCost - wood)} wood";
             }
             if (stone < stoneCost)
             {
-                missingResources += $"{Mathf.Abs(stoneCost - stone)} stone; ";
+                missingResources += $"{Mathf.Abs(stoneCost - stone)} stone";
             }
             if (iron < ironCost)
             {
-                missingResources += $"{Mathf.Abs(ironCost - iron)} iron; ";
+                missingResources += $"{Mathf.Abs(ironCost - iron)} iron";
+            }
+            if (food < foodCost)
+            {
+                missingResources += $"{Mathf.Abs(foodCost - food)} food";
+            }
+            if (unemployed < assignWorkers)
+            {
+                missingResources += $"{Mathf.Abs(assignWorkers - unemployed)} available worker(s)";
+            }
+
+            Debug.Log($"Not enough resources. You are missing: {missingResources}");
+        }
+            return canBuild;
+    }
+    private bool BuildItem(uint woodCost, uint stoneCost, uint ironCost, uint foodCost, ref uint buildingType) //No workers assigned
+    {
+        bool canBuild = wood >= woodCost && stone >= stoneCost && iron >= ironCost && food >= foodCost;
+        if (canBuild)
+        {
+            wood -= woodCost;
+            stone -= stoneCost;
+            iron -= ironCost;
+            food -= foodCost;
+            buildingType++;
+
+            Debug.Log("Building successful");
+        }
+        else
+        {
+            string missingResources = "";
+
+            if (wood < woodCost)
+            {
+                missingResources += $"{Mathf.Abs(woodCost - wood)} wood";
+            }
+            if (stone < stoneCost)
+            {
+                missingResources += $"{Mathf.Abs(stoneCost - stone)} stone";
+            }
+            if (iron < ironCost)
+            {
+                missingResources += $"{Mathf.Abs(ironCost - iron)} iron";
             }
             if (food < foodCost)
             {
@@ -233,106 +353,84 @@ public class GameManager : MonoBehaviour
             return canBuild;
     }
 
-    private void ProduceWood(int woodProduced)
+    private void ProduceWood(uint woodProduced)
     {
-        wood += woodProduced * (int)woodcutters;
+        wood += woodProduced * woodcutters;
     }
-    private void ProduceStone(int stoneProduced)
+    private void ProduceStone(uint stoneProduced)
     {
-        stone += stoneProduced * (int)quarryWorkers;
+        stone += stoneProduced * quarryWorkers;
     }
-    private void ProduceIron(int ironProduced)
+    private void ProduceIron(uint ironProduced)
     {
-        iron += ironProduced * (int)ironMiners;
+        iron += ironProduced * ironMiners;
     }
-    private void ProduceGold(int goldProduced)
+    private void ProduceGold(uint goldProduced)
     {
-        gold += goldProduced * (int)goldMiners;
+        gold += goldProduced * goldMiners;
+    }
+    private void ProduceTools(uint toolsProduced)
+    {
+        tools += toolsProduced * blacksmiths;
     }
 
     public void BuildFarm()
     {
-        if (BuildCost(10, 0, 0, 5))
-        {
-            farms++;
-            farmers += 2;
-            unemployed -= 2;
-        }
-
+        BuildItem(10, 0, 0, 5, 2, ref farmers, ref farms);
     }
     public void BuildIronMine()
     {
-        if (BuildCost(35, 20, 0, 30))
-        {
-            ironMines++;
-            ironMiners += 3;
-            unemployed -= 3;
-        }
+        BuildItem(35, 20, 0, 30, 3, ref ironMiners, ref ironMines);
     }
     public void BuildGoldMine()
     {
-        if (BuildCost(50, 35, 15, 30))
-        {
-            goldMines++;
-            goldMiners += 3;
-            unemployed -= 3;
-        }
+        BuildItem(50, 35, 15, 30, 3, ref goldMiners, ref goldMines);
     }
     public void BuildQuarry()
     {
-        if (BuildCost(25, 0, 0, 30))
-        {
-            quarries++;
-            quarryWorkers += 3;
-            unemployed -= 3;
-        }
+        BuildItem(25, 0, 0, 30, 3, ref quarryWorkers, ref quarries);
     }
     public void BuildWoodcutterHut()
     {
-        if (BuildCost(15, 0, 1, 10))
-        {
-            woodcutterHuts++;
-            woodcutters += 2;
-            unemployed -= 2;
-        }
+        BuildItem(15, 0, 1, 10, 2, ref woodcutters, ref woodcutterHuts);
     }
     public void BuildSmithy()
     {
-        if (BuildCost(50, 30, 25, 30))
-        {
-            smithy++;
-            blacksmiths++;
-            unemployed--;
-        }
+        BuildItem(50, 30, 25, 30, 1, ref blacksmiths, ref smithy);
     }
     public void BuildHouse()
     {
-        if (BuildCost(5, 0, 0, 5))
-        {
-            houses++;
-        }
+        BuildItem(10, 0, 0, 10, ref houses);
     }
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    void Awake()
     {
         Debug.Assert(manager != null, "There is no manager!");
         pausePanel.SetActive(false);
-    }
+
+        if (instance)
+        {
+            Destroy(gameObject);
+        }
+        else
+        {
+            instance = this;
+        }
+}
 
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (Input.GetKeyDown(KeyCode.Escape) && !otherStates)
         {
             pausePanel.SetActive(!pausePanel.activeSelf);
         }
-
-        if (Input.GetKeyDown(KeyCode.F))
+        if (Input.GetKeyDown(KeyCode.K) && !otherStates)
         {
-            BuildFarm();
+            Win();
         }
+
         UpdateTime();
         UpdateText();
-        //totalPopulation = GetTotalPopulation();
     }
 }

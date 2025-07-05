@@ -2,23 +2,20 @@ using UnityEngine;
 
 public class AudioSourceManager : MonoBehaviour
 {
-    public static AudioSourceManager instance;
+    public static AudioSourceManager audioInstance;
+    public float globalVolume = 0.5f;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Awake()
     {
-
-        AudioSourceManager duplicate = (AudioSourceManager)FindFirstObjectByType(typeof(AudioSourceManager));
-        if (duplicate != null && instance != null)
+        if (audioInstance)
         {
-            Debug.Log($"Found dupe: {duplicate} (original: {instance})");
-            instance = duplicate;
-            Destroy(duplicate);
+            Destroy(gameObject);
         }
-        if (instance == null && duplicate == null)
+        else
         {
-            instance = this;
+            audioInstance = this;
+            DontDestroyOnLoad(gameObject);
         }
 
-        DontDestroyOnLoad(this);
     }
 }
