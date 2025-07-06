@@ -270,10 +270,9 @@ public class GameManager : MonoBehaviour
     }
 
     //TODO: Make "BuildItem" a class
-    private bool BuildItem(uint woodCost, uint stoneCost, uint ironCost, uint foodCost, uint assignWorkers, ref uint workerType, ref uint buildingType)
+    private void BuildItem(uint woodCost, uint stoneCost, uint ironCost, uint foodCost, uint assignWorkers, ref uint workerType, ref uint buildingType)
     {
-        bool canBuild = wood >= woodCost && stone >= stoneCost && iron >= ironCost && food >= foodCost && unemployed >= assignWorkers;
-        if (canBuild)
+        if (BuildCheck(woodCost, stoneCost, ironCost, foodCost, assignWorkers))
         {
             wood -= woodCost;
             stone -= stoneCost;
@@ -312,45 +311,47 @@ public class GameManager : MonoBehaviour
 
             Debug.Log($"Not enough resources. You are missing: {missingResources}");
         }
-            return canBuild;
     }
-    private bool BuildItem(uint woodCost, uint stoneCost, uint ironCost, uint foodCost, ref uint buildingType) //No workers assigned
+    private void BuildItem(uint woodCost, uint stoneCost, uint ironCost, uint foodCost, ref uint buildingType) //No workers assigned
     {
-        bool canBuild = wood >= woodCost && stone >= stoneCost && iron >= ironCost && food >= foodCost;
-        if (canBuild)
-        {
-            wood -= woodCost;
-            stone -= stoneCost;
-            iron -= ironCost;
-            food -= foodCost;
-            buildingType++;
+        uint building = buildingType;
+            if (BuildCheck(woodCost, stoneCost, ironCost, foodCost, 0))
+            {
+                wood -= woodCost;
+                stone -= stoneCost;
+                iron -= ironCost;
+                food -= foodCost;
+                buildingType++;
 
-            Debug.Log("Building successful");
-        }
-        else
-        {
-            string missingResources = "";
+                Debug.Log("Building successful");
+            }
+            else
+            {
+                string missingResources = "";
 
-            if (wood < woodCost)
-            {
-                missingResources += $"{Mathf.Abs(woodCost - wood)} wood";
-            }
-            if (stone < stoneCost)
-            {
-                missingResources += $"{Mathf.Abs(stoneCost - stone)} stone";
-            }
-            if (iron < ironCost)
-            {
-                missingResources += $"{Mathf.Abs(ironCost - iron)} iron";
-            }
-            if (food < foodCost)
-            {
-                missingResources += $"{Mathf.Abs(foodCost - food)} food";
-            }
+                if (wood < woodCost)
+                {
+                    missingResources += $"{Mathf.Abs(woodCost - wood)} wood";
+                }
+                if (stone < stoneCost)
+                {
+                    missingResources += $"{Mathf.Abs(stoneCost - stone)} stone";
+                }
+                if (iron < ironCost)
+                {
+                    missingResources += $"{Mathf.Abs(ironCost - iron)} iron";
+                }
+                if (food < foodCost)
+                {
+                    missingResources += $"{Mathf.Abs(foodCost - food)} food";
+                }
 
-            Debug.Log($"Not enough resources. You are missing: {missingResources}");
-        }
-            return canBuild;
+                Debug.Log($"Not enough resources. You are missing: {missingResources}");
+            }
+    }
+    public bool BuildCheck(uint woodCost, uint stoneCost, uint ironCost, uint foodCost, uint assignWorkers)
+    {
+        return wood >= woodCost && stone >= stoneCost && iron >= ironCost && food >= foodCost && unemployed >= assignWorkers;
     }
 
     private void ProduceWood(uint woodProduced)
